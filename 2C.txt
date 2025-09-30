@@ -1,0 +1,49 @@
+def read_file(path='Chapter 2/rosalind_ba2c.txt'):
+    with open(path) as f:
+        fs = [i.strip() for i in f.readlines()] # problem starts here
+        Text = (fs[0])
+        k = int(fs[1])
+        profile_array = fs[2:]
+        profile_matrix = []
+        for i in range (len(profile_array)):
+            #change each entry to an array
+            profile_matrix_row = list(map(float, profile_array[i].split()))
+            profile_matrix.append(profile_matrix_row)
+    return Text, k, profile_matrix
+
+
+def kmer_probability(kmer, k, profile_matrix):
+    "Calculate the probability of a kmer given the profile matrix"
+    probability = 1
+    for i in range(k):
+        if kmer[i] == 'A':
+            probability = probability*profile_matrix[0][i]
+        if kmer[i] == 'C':
+            probability = probability*profile_matrix[1][i]
+        if kmer[i] == 'G':
+            probability = probability*profile_matrix[2][i]
+        if kmer[i] == 'T':
+            probability = probability*profile_matrix[3][i]
+    return probability
+
+def kmers_in_Text(Text, k):
+    kmers_in_Text = []
+    n = len(Text)
+    for i in range(n-k+1):
+        kmers_in_Text.append(Text[i:i+k])
+    return kmers_in_Text
+
+def most_prob_kmer(Text, k, profile_matrix):
+    all_kmers = kmers_in_Text(Text, k)
+    kmers_prob_dict = {}
+    for kmer in all_kmers:
+        kmers_prob_dict[kmer] = kmer_probability(kmer, k, profile_matrix)
+
+    m = max(kmers_prob_dict.values())
+    for kmer in all_kmers:
+        if kmers_prob_dict[kmer] == m:
+            return kmer  
+
+Text, k, profile_matrix = read_file()
+ans = most_prob_kmer(Text, k, profile_matrix)
+print(ans)

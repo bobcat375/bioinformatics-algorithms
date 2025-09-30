@@ -1,0 +1,137 @@
+import numpy as np
+import random
+#we run it 1000 times!!
+
+def read_file(path='Chapter 2/rosalind_ba2f.txt'):
+    with open(path) as f:
+        fs = [i.strip() for i in f.readlines()] 
+        k, t = map(int, fs[0].split())
+        dna_strings = fs[1:]
+    return k, t, dna_strings
+
+def generate_random_kmers(dna_strings, k, t):
+    n = len(dna_strings[0])
+    random_kmers = []
+    for i in range(t):
+        #randomly generated number 0 to n-k
+        x = random.randint(0, n-k)
+        random_kmers.append(dna_strings[i][x: x+k])
+    return random_kmers
+
+def form_profile_matrix(motif_array, k, t): #NOW WITH PSEUDOCOUNTS! pass in an array of motifs 
+    a_count_array = np.ones(k)
+    c_count_array = np.ones(k)
+    g_count_array = np.ones(k)
+    t_count_array = np.ones(k)
+    #form a_count_array
+    for motif in motif_array:
+        for i in range(k):
+            if motif[i] == 'A':
+                a_count_array[i]  += 1
+            if motif[i] == 'C':
+                c_count_array[i]  += 1
+            if motif[i] == 'G':
+                g_count_array[i]  += 1
+            if motif[i] == 'T':
+                t_count_array[i]  += 1
+    profile_matrix = np.array([a_count_array/(t+4), c_count_array/(t+4), g_count_array/(t+4), t_count_array/(t+4)]) 
+    return profile_matrix
+
+def kmer_probability(kmer, k, profile_matrix):
+    "Calculate the probability of a kmer given the profile matrix"
+    probability = 1
+    for i in range(k):
+        if kmer[i] == 'A':
+            probability = probability*profile_matrix[0][i]
+        if kmer[i] == 'C':
+            probability = probability*profile_matrix[1][i]
+        if kmer[i] == 'G':
+            probability = probability*profile_matrix[2][i]
+        if kmer[i] == 'T':
+            probability = probability*profile_matrix[3][i]
+    return probability
+
+def kmers_in_Text(Text, k):
+    kmers_in_Text = []
+    n = len(Text)
+    for i in range(n-k+1):
+        kmers_in_Text.append(Text[i:i+k])
+    return kmers_in_Text
+
+def most_prob_kmer(Text, k, profile_matrix):
+    """Finds most probably kmer in a line of text given a profile matrix"""
+    all_kmers = kmers_in_Text(Text, k)
+    kmers_prob_dict = {}
+    for kmer in all_kmers:
+        kmers_prob_dict[kmer] = kmer_probability(kmer, k, profile_matrix)
+
+    m = max(kmers_prob_dict.values())
+    for kmer in all_kmers:
+        if kmers_prob_dict[kmer] == m:
+            return kmer
+
+def form_motifs(profile_matrix, dna_strings, k, t):
+    motifs = []
+    for i in range(t):
+        motifs.append(most_prob_kmer(dna_strings[i], k, profile_matrix))
+    return motifs
+
+def form_consensus(motif_array, k, t): 
+    """Forms consensus string, which is useful in finding the score"""
+    profile_matrix = form_profile_matrix(motif_array, k, t)
+    transpose_profile_matrix = profile_matrix.transpose() #just makes easier to write for loops below
+    consensus = ""
+    for i in range(k):
+        #find location of max value in transpose_profile_matrix[i]. If location of max value is 0, append A to string etc.
+        temp = list(transpose_profile_matrix[i])
+        max_value = max(temp) 
+        max_index = temp.index(max_value)
+        if max_index == 0:
+            consensus = consensus + 'A'
+        if max_index == 1:
+            consensus = consensus + 'C'    
+        if max_index == 2:
+            consensus = consensus + 'G'
+        if max_index == 3:
+            consensus = consensus + 'T'
+    return consensus #haven't tested this yet!!!
+
+def hamming_distance(string1, string2):
+    """Used to calculate score below"""
+    stringlength = len(string1)
+    count = 0
+    for i in range(stringlength):
+        if string1[i] != string2[i]:
+            count += 1
+    return count
+
+def calculate_score(motif_array, k, t):
+    "Forms consensus string from above matrix, and then calculates the score of motif_array"
+    consensus = form_consensus(motif_array, k, t)
+    score = 0 #initalize 
+    #sum the Hamming distances over each motif row of motif_array
+    for i in range(len(motif_array)):
+        score += hamming_distance(motif_array[i], consensus)
+    return score
+
+
+def randomized_motif_search(dna_strings, k, t):
+    motifs = generate_random_kmers(dna_strings, k, t)
+    best_motifs = motifs
+    while True: #want to loop forever - is this how I do it?
+        profile = form_profile_matrix(motifs, k, t)
+        motifs = form_motifs(profile, dna_strings, k, t)
+        if calculate_score(motifs, k, t) < calculate_score(best_motifs, k, t):
+            best_motifs = motifs
+        else:
+            return best_motifs
+        
+
+k, t, dna_strings = read_file()
+best_from_randomized_search = randomized_motif_search(dna_strings, k, t) #initialize and do it once so smth to compare
+for i in range(999):
+    new_randomized_search = randomized_motif_search(dna_strings, k, t)
+    if calculate_score(new_randomized_search, k, t) < calculate_score(best_from_randomized_search,k,t):
+        best_from_randomized_search = new_randomized_search
+print(best_from_randomized_search)
+    #find a way to score to find the best one

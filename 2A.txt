@@ -1,0 +1,87 @@
+def generateAllKmers(k):
+    if k == 1:
+        return ['A', 'C', 'T', 'G']
+    induction_kmer = generateAllKmers(k-1)
+    kmers = []
+    for base in 'ACTG':
+        for ik in induction_kmer:
+            kmers.append(ik + base)
+    return kmers
+
+def hammingDistance(string1, string2):
+    stringlength = len(string1)
+    count = 0
+    for i in range(stringlength):
+        if string1[i] != string2[i]:
+            count += 1
+    return count
+
+def kmers_in_dna(dna_array,k):
+    #Dna is an array
+    #We first want to take ech element of the array
+    #And then loop through each window of the array,
+    #adding each window to kmers_in_dna_array
+    kmers_in_dna_array = []
+    len_dna_array = len(dna_array)
+    len_dna_element = len(dna_array[0])
+    for i in range(len_dna_array):
+        element = dna_array[i]
+        for j in range(len_dna_element-k+1):
+            kmers_in_dna_array.append(element[j:j+k])
+
+    return kmers_in_dna_array
+
+def approx_pattern_match(Pattern, Text, d):
+    """
+    if Pattern appears with a Hamming distance <= d in Text, then it returns true. Else, returns flase"""
+    n = len(Text)
+    k = len(Pattern)
+    for i in range (n-k+1):
+        if hammingDistance(Text[i: i+k],Pattern) <=d:
+            return True
+
+        
+
+
+def motif_enumeration(dna_array, k, d):
+
+    patterns = []
+    all_possible_kmers_array = generateAllKmers(k)
+
+    dna_kmers_array = kmers_in_dna(dna_array, k)
+
+    differ_dna_kmer_array = []
+    for dna_kmer in dna_kmers_array:
+        for possible_kmer in all_possible_kmers_array:
+            if hammingDistance(possible_kmer,dna_kmer) <= d:
+                differ_dna_kmer_array.append(possible_kmer)
+        
+
+    #loop through differ_dna_kmer_array to check if appears in each string from DNA
+    for differ_dna_kmer in differ_dna_kmer_array:
+        #want to check if differ_dna_kmer appears in line with at most d differences
+        count = 0
+        for string in dna_array:
+            if approx_pattern_match(differ_dna_kmer, string,d) == True: #variables in this was wrong
+                count +=1
+
+        if count == len(dna_array):
+            patterns.append(differ_dna_kmer)
+    
+    unique_patterns = list(set(patterns))
+    return unique_patterns
+
+
+    
+
+file_path = 'Chapter 2/rosalind_ba2a.txt'
+
+with open(file_path, 'r') as file:
+    lines = [line.strip("\n") for line in file]
+    k, d = map(int, lines[0].split()) #somehow gets rid of \n for newline ... neat :)
+    del lines[0]
+    dna_array = lines 
+
+motif_array = motif_enumeration(dna_array, k, d)
+motif_string = " ".join(motif_array)
+print(motif_string)

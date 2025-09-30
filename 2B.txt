@@ -1,0 +1,56 @@
+def hamming_distance(string1, string2):
+    stringlength = len(string1)
+    count = 0
+    for i in range(stringlength):
+        if string1[i] != string2[i]:
+            count += 1
+    return count
+
+def min_hamming_distance(Pattern, Text): #if smth goes wrong than test this 
+    "Returns minimum Hamming distance possible between Pattern and a window in Text"
+    n = len(Text)
+    k = len(Pattern)
+    min_hamming_distance = k #initialize
+    for i in range(n-k+1):
+        if hamming_distance(Text[i: i+k],Pattern) < min_hamming_distance:
+            min_hamming_distance = hamming_distance(Text[i: i+k],Pattern)
+
+    return min_hamming_distance
+
+def generate_all_kmers(k):
+    if k == 1:
+        return ['A', 'C', 'T', 'G']
+    induction_kmer = generate_all_kmers(k-1)
+    kmers = []
+    for base in 'ACTG':
+        for ik in induction_kmer:
+            kmers.append(ik + base)
+    return kmers
+
+def find_median_string(dna_array, k):
+    kmer_distance_dict = {}
+    all_kmers = generate_all_kmers(k)
+    for kmer in all_kmers:
+        total_distance = 0; #initalize - maybe this should go somewhere else like an array or dictionary so we can find minimal value
+        for i in range(len(dna_array)):
+            total_distance += min_hamming_distance(kmer, dna_array[i])
+
+        kmer_distance_dict[kmer] = total_distance #want to test
+    
+    #find kmer that minimizes the distance and then return this
+    min_total_distance = min(kmer_distance_dict.values())
+    for key in kmer_distance_dict:
+        if kmer_distance_dict[key] == min_total_distance:
+            median_string = key
+    
+    return median_string
+
+file_path = 'Chapter 2/rosalind_ba2b.txt'
+
+with open(file_path, 'r') as file:
+    lines = [line.strip("\n") for line in file]
+    k = int(lines[0]) #somehow gets rid of \n for newline ... neat :)
+    del lines[0]
+    dna_array = lines 
+
+print(find_median_string(dna_array, k))
