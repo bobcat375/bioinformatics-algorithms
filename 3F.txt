@@ -1,0 +1,66 @@
+"""    EULERIANCYCLE(Graph)
+        form a cycle Cycle by randomly walking in Graph (don't visit the same edge twice!)
+        while there are unexplored edges in Graph
+            select a node newStart in Cycle with still unexplored edges
+            form Cycle’ by traversing Cycle (starting at newStart) and then randomly walking
+            Cycle ← Cycle’
+        return Cycle"""
+
+def main(graph: dict) -> list:
+    start_node = next(iter(graph))
+    cycle, del_graph = random_walk(graph, start_node)
+    while del_graph != {}:
+        new_start = find_new_start(cycle, del_graph)
+        cycle1 = start_cycle_at_start_node(cycle, new_start)
+        cycle2, new_del_graph = random_walk(del_graph, new_start)
+        cycle = cycle1 + cycle2
+        del_graph = new_del_graph
+    return cycle
+
+def start_cycle_at_start_node(cycle: list, start_node) -> list:
+    n = len(cycle)
+    for i in range(n):
+        if cycle[i] == start_node:
+            pos = i #it doesn't matter which i we pick even if there are multiple i such that cycle[i] is start_node...
+    new_array = cycle[pos:] + cycle[:pos]
+    return new_array
+
+
+
+def find_new_start(cycle: list, graph: dict):
+    for node in cycle:
+        if node in graph.keys():
+            return node
+
+def random_walk(graph: dict, start_node) -> list:
+    """
+    do "go from key to value, get rid of that edge so no repeats, value = key update" until value = first key 
+    """
+    node = start_node
+    out = [start_node]
+    while node in graph.keys() : #this will always stop at beginning node because of math
+        val = graph[node][0] #I want they key to be an array
+        out.append(val)
+        graph[node].remove(val)#get rid of val from graph[key] array
+        if graph[node] == []:
+            del graph[node]
+        node = val
+    out = out[:-1]
+    return out, graph
+
+
+
+graph = {}
+
+with open("Chapter 3/rosalind_ba3f.txt") as f:
+    for line in f:
+        key_str, value_str = line.strip().split("->")
+        key = int(key_str.strip())
+        values = [int(v.strip()) for v in value_str.split(",")]
+        graph[key] = values
+
+cycle_list =  main(graph)  #they want me to format it so we can see the loop
+cycle_list.append(cycle_list[0])
+
+with open("Chapter 3/3f_output.txt", 'w') as out:  # Open file for writing
+    out.write("->".join(map(str, cycle_list)))

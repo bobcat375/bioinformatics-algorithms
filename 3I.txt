@@ -1,0 +1,82 @@
+from collections import defaultdict
+"""
+Find a k-universal circular binary string.
+
+Given: An integer k.
+
+Return: A k-universal circular string. (If multiple answers exist, you may return any one.)"""
+def main():
+    k = read_file()
+    kmers = create_binary_kmers(k)
+    adjacency_dict = DeBruijn(kmers)
+    cycle = eulerian_cycle(adjacency_dict)
+    circular_string = form_string_from_path(cycle)[:-k+1]
+    with open("Chapter 3/3i_output.txt", 'w') as out:  # Open file for writing
+        out.write(circular_string)
+    
+
+
+def read_file(path='Chapter 3/rosalind_ba3i.txt'):
+    with open(path) as f:
+        k = int(f.read())
+    return k
+
+def create_binary_kmers(k: int) -> list:
+    if k == 1:
+        return ['0', '1']
+    induction_kmer = create_binary_kmers(k-1)
+    kmers = []
+    for digit in '01':
+        for ik in induction_kmer:
+            kmers.append(ik + digit)
+    return kmers #shouldn't matter if elements of list are string/int
+
+def DeBruijn(kmers: list) -> dict:
+    result = defaultdict(list)
+    k = len(kmers[0]) 
+
+    for kmer in kmers:
+        prefix = kmer[:k-1]
+        suffix = kmer[1:]
+        result[prefix].append(suffix)
+    
+    for key in result:
+        result[key].sort() #sorts values in alphabetical order
+
+    return result
+
+def eulerian_cycle(graph: dict) -> list:
+    # init cycle with any node
+    cycle = [list(graph.keys())[0]]
+    # run until all edges are moved from graph to cycle
+    while len(graph) > 0:
+        # whenever cycle closes rotate to a node with remaining targets
+        if cycle[0] == cycle[-1]:
+            while not cycle[0] in graph:
+                cycle.pop(0)
+                cycle.append(cycle[0])
+        # the last node of cycle is the new source
+        source = cycle[-1]
+        # move one target at a time from graph to the end of cycle
+        cycle.append(graph[source].pop())
+        # clean up empty dict entries of graph
+        if len(graph[source]) == 0: del graph[source]
+    return cycle
+
+def form_string_from_path(path_array):
+    n = len(path_array)
+    string = ''
+    for i in range(n-1):
+        string = string + path_array[i][0]
+    string = string + path_array[n-1]
+    return string
+
+def form_string_from_path(path_array):
+    n = len(path_array)
+    string = ''
+    for i in range(n-1):
+        string = string + path_array[i][0]
+    string = string + path_array[n-1]
+    return string
+
+main()

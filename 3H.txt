@@ -1,0 +1,91 @@
+from collections import defaultdict
+"""
+Reconstruct a string from its k-mer composition.
+
+Given: An integer k followed by a list of k-mers Patterns.
+
+Return: A string Text with k-mer composition equal to Patterns. (If multiple answers exist, you may return any one.)"""
+
+def main():
+    k, kmers = read_file()
+    adjacency_dict = DeBruijn(kmers)
+    path = eulerian_path(adjacency_dict)
+    genome = form_string_from_path(path)
+    with open("Chapter 3/3h_output.txt", 'w') as out:  # Open file for writing
+        out.write(genome)
+
+
+def read_file(path='Chapter 3/rosalind_ba3h.txt'):
+    with open(path) as f:
+        fs = [i.strip() for i in f.readlines()] 
+        k = int(fs[0])
+        Text = fs[1:]
+    return k, Text
+
+def DeBruijn(kmers: list) -> dict:
+    result = defaultdict(list)
+    k = len(kmers[0]) 
+
+    for kmer in kmers:
+        prefix = kmer[:k-1]
+        suffix = kmer[1:]
+        result[prefix].append(suffix)
+    
+    for key in result:
+        result[key].sort() #sorts values in alphabetical order
+
+    return result
+
+def eulerian_path(adj: dict):
+
+    # find the unbalanced nodes
+    balances = defaultdict(int)
+    for source in adj:
+        for target in adj[source]:
+            balances[target] += 1
+            balances[source] -= 1
+    source, target = None, None
+    for node in balances:
+        if balances[node] == -1:
+            target = node
+        if balances[node] == 1:
+            source = node
+
+    # add the missing edge
+    adj[source].append(target)
+
+    # run eulerianCycle and drop the circle closing postfix
+    path = eulerian_cycle(adj, source)[0:-1]
+
+    # rotate until the missing edge matches end and beginning
+    while path[0] != target or path[-1] != source:  
+       path.append(path.pop(0))
+    return path
+
+def eulerian_cycle(graph: dict, start_node) -> list:
+    # init cycle with any node
+    cycle = [start_node]
+    # run until all edges are moved from graph to cycle
+    while len(graph) > 0:
+        # whenever cycle closes rotate to a node with remaining targets
+        if cycle[0] == cycle[-1]:
+            while not cycle[0] in graph:
+                cycle.pop(0)
+                cycle.append(cycle[0])
+        # the last node of cycle is the new source
+        source = cycle[-1]
+        # move one target at a time from graph to the end of cycle
+        cycle.append(graph[source].pop())
+        # clean up empty dict entries of graph
+        if len(graph[source]) == 0: del graph[source]
+    return cycle
+
+def form_string_from_path(path_array):
+    n = len(path_array)
+    string = ''
+    for i in range(n-1):
+        string = string + path_array[i][0]
+    string = string + path_array[n-1]
+    return string
+            
+main()

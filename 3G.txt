@@ -1,0 +1,83 @@
+"""
+Find an Eulerian path in a graph.
+
+Given: A directed graph that contains an Eulerian path, where the graph is given in the form of an adjacency list.
+
+Return: An Eulerian path in this graph."""
+
+def main():
+    graph = form_adjacency_graph()
+    start_node, end_node = find_start_end_node(graph)
+    graph = add_edge_to_graph(end_node, start_node, graph)
+    cycle = eulerian_cycle(graph, start_node)
+    #turn into path starting at start_node and ending at end_node
+    no_loop_list = cycle[:-1]
+    path = form_correct_path(no_loop_list, start_node, end_node)
+    with open("Chapter 3/3g_output.txt", 'w') as out:  # Open file for writing
+        out.write("->".join(map(str, path)))
+
+
+def form_adjacency_graph() -> dict:
+    graph = {}
+    with open("Chapter 3/rosalind_ba3g.txt") as f:
+        for line in f:
+            key_str, value_str = line.strip().split("->")
+            key = int(key_str.strip())
+            values = [int(v.strip()) for v in value_str.split(",")]
+            graph[key] = values
+    #we should ensure all the values are also keys (which can have an empty corresponding value)
+    empty_key = []
+    for val in graph.values():
+        empty_key += [element for element in val if element not in graph.keys()]
+    for element in empty_key:
+        graph[element] = []
+    return graph
+
+def find_start_end_node(graph: dict):
+    #create a dictionary with keys being the node v, and the values being an array [size(In(v)),size(Out(v))]
+    nodes_degree = {}
+    for node in graph.keys():
+        out_node = graph[node]
+        in_node = [k for k,v in graph.items() if node in v]
+        nodes_degree[node] = [len(in_node), len(out_node)]
+    #In order to form an Eulerian graph there should be two unbalanced nodes
+    #start_node is node with more going out then in, end_node more going in then out
+    start_node = int(next(k for k, v in nodes_degree.items() if v[0] < v[1]))
+    end_node = int(next(k for k, v in nodes_degree.items() if v[0] > v[1]))
+    return start_node, end_node
+
+def add_edge_to_graph(end_node: int, start_node: int, graph: dict) -> dict:
+    """Creates an edge from end_node to start_node, which for our purposes should create a balanced and strongly connected graph"""
+    graph[end_node].append(start_node)
+    return graph
+
+def eulerian_cycle(graph, start_node) -> list:
+    # init cycle with any node
+    cycle = [start_node]
+    # run until all edges are moved from graph to cycle
+    while len(graph) > 0:
+        # whenever cycle closes rotate to a node with remaining targets
+        if cycle[0] == cycle[-1]:
+            while not cycle[0] in graph:
+                cycle.pop(0)
+                cycle.append(cycle[0])
+        # the last node of cycle is the new source
+        source = cycle[-1]
+        # move one target at a time from graph to the end of cycle
+        cycle.append(graph[source].pop())
+        # clean up empty dict entries of graph
+        if len(graph[source]) == 0: del graph[source]
+    return cycle
+
+def form_correct_path(path, start_node, end_node) -> list:
+    """Takes a path and outputs a path starting with start_node and ending with end_node"""
+    if path[0] == start_node and path[:-1] == end_node:
+        return path
+    else:
+        for i in range(len(path)):
+            if path[i] == end_node and path[i+1] == start_node:
+                path = path[i+1:] + path[:i+1]
+                return path
+
+        
+main()

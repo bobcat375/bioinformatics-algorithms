@@ -1,0 +1,36 @@
+"""
+Construct the De Bruijn Graph of a Collection of k-mers
+url: https://rosalind.info/problems/ba3e/
+
+Given: A collection of k-mers Patterns.
+Return: The de Bruijn graph DeBruijn(Patterns), in the form of an adjacency list.
+"""
+#isn't that complicated so I think things would get overcomplicated if I did the newspaper format
+from collections import defaultdict
+
+def DeBruijn(kmers: list) -> dict:
+    result = defaultdict(list)
+    k = len(kmers[0]) 
+
+    for kmer in kmers:
+        prefix = kmer[:k-1]
+        suffix = kmer[1:]
+        result[prefix].append(suffix)
+    
+    for key in result:
+        result[key].sort() #sorts values in alphabetical order
+
+    return result
+
+def read_file(path='Chapter 3/rosalind_ba3e.txt'):
+    with open(path) as f:
+        fs = [i.strip() for i in f.readlines()] 
+        Text = fs[0:]
+    return Text
+
+Text = read_file()
+result = DeBruijn(Text)
+
+with open("Chapter 3/3e_output.txt", 'w') as out:  # Open file for writing
+    for key in sorted(result.keys()):
+        out.write(key + ' -> ' + ",".join(result[key]) + '\n')

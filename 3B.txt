@@ -1,0 +1,16 @@
+def read_file(path='Chapter 3/rosalind_ba3b.txt'):
+    with open(path) as f:
+        fs = [i.strip() for i in f.readlines()] 
+        Text = fs[0:]
+    return Text
+
+def form_string_from_path(path_array):
+    n = len(path_array)
+    string = ''
+    for i in range(n-1):
+        string = string + path_array[i][0]
+    string = string + path_array[n-1]
+    return string
+
+Text = read_file()
+print(form_string_from_path(Text))

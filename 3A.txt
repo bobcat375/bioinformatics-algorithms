@@ -1,0 +1,19 @@
+def read_file(path='Chapter 3/rosalind_ba3a.txt'):
+    with open(path) as f:
+        fs = [i.strip() for i in f.readlines()] 
+        k = int(fs[0])
+        Text = fs[1:][0]
+    return k, Text
+
+def kmer_composition(Text, k):
+    kmers_in_Text = []
+    n = len(Text)
+    for i in range(n-k+1):
+        kmers_in_Text.append(Text[i:i+k])
+    alphabetical = sorted(kmers_in_Text)
+    return alphabetical
+
+k, Text = read_file()
+alphabetical = kmer_composition(Text, k)
+output = "\n".join(alphabetical)
+print(output)

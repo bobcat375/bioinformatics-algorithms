@@ -1,0 +1,33 @@
+def read_file(path='Chapter 3/rosalind_ba3c.txt'):
+    with open(path) as f:
+        fs = [i.strip() for i in f.readlines()] 
+        Text = fs[0:]
+    return Text
+
+def suffix(string):
+    n = len(string)
+    suffix = string[1:]
+    return suffix
+
+def prefix(string):
+    n = len(string)
+    prefix = string[:n-1]
+    return prefix
+
+def form_overlap_graph_matrix(kmer_array):
+    n = len(kmer_array)
+    overlap_graph = [] #initialize
+    for i in range(n):
+        #form an array without the ith component to search through for edges
+        kmer_array_without_i = kmer_array[:i] + kmer_array[i+1:]
+        for j in range(n-1):
+            if suffix(kmer_array[i]) == prefix(kmer_array_without_i[j]):
+                overlap_graph.append([kmer_array[i], kmer_array_without_i[j]])
+    return overlap_graph
+
+kmer_array = read_file()
+overlap_graph = form_overlap_graph_matrix(kmer_array)
+
+with open("3c_output.txt", "w") as f:
+    for a, b in overlap_graph:
+        f.write(f"{a} -> {b}\n")

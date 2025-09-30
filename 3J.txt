@@ -1,0 +1,80 @@
+"""Reconstruct a string from its paired composition.
+
+Given: Integers k and d followed by a collection of paired k-mers PairedReads.
+
+Return: A string Text with (k, d)-mer composition equal to PairedReads. (If multiple answers exist, you may return any one.)
+"""
+
+from collections import defaultdict, deque
+
+def main():
+    k, d, paired_kmers = read_file()
+    adj_dict = paired_DeBruijn(k, paired_kmers) #note that the key and value are tuples, since dict can't have list keys
+    path = eulerian_path(adj_dict)
+    text = string_from_path(path, k, d)
+    with open("Chapter 3/3j_output.txt", 'w') as out:  # Open file for writing
+        out.write(text)
+
+def read_file(path='Chapter 3/rosalind_ba3j.txt'): #returns two ints and lists, as a tuple
+    with open(path) as f:
+        lines = [i.strip() for i in f.readlines()]
+        k, d = map(int, lines[0].split())
+        del lines[0]
+        paired_kmers = []
+        for line in lines:
+            pattern1, pattern2 = line.strip().split("|")
+            paired_kmers.append((pattern1, pattern2))
+    return k, d, paired_kmers
+
+def paired_DeBruijn(k: int, paired_kmers: list) -> dict:
+    result = defaultdict(list)
+    for a, b in paired_kmers:
+        prefix = (a[:-1], b[:-1])
+        suffix = (a[1:], b[1:])
+        result[prefix].append(suffix)
+    return result
+
+def eulerian_path(graph: dict) -> list:
+    """Find Eulerian path in the paired de Bruijn graph."""
+    indeg = defaultdict(int)
+    outdeg = defaultdict(int)
+    for source in graph:
+        for sink in graph[source]:
+            outdeg[source] += 1
+            indeg[sink] += 1
+    start = None
+    end = None
+    for node in set(indeg) | set(outdeg):
+        if outdeg[node] > indeg[node]:
+            start = node
+        if indeg[node] > outdeg[node]:
+            end = node
+   
+    stack = [start]
+    path = []
+    local_graph = {u: deque(vs) for u,vs in graph.items()}
+    while stack:
+        u = stack[-1]
+        if u in local_graph and local_graph[u]:
+            v = local_graph[u].popleft()
+            stack.append(v)
+        else:
+            path.append(stack.pop())
+    return path[::-1]
+
+def string_from_path(path, k, d):
+    """Reconstruct string from Eulerian path of paired (k-1)-mers."""
+    # First string comes from first elements, second from second elements
+    prefix_string = path[0][0]
+    suffix_string = path[0][1]
+    for (a, b) in path[1:]:
+        prefix_string += a[-1]
+        suffix_string += b[-1]
+    # Check overlap condition: suffix of prefix_string (k+d) must match prefix of suffix_string
+    for i in range(k+d, len(prefix_string)):
+        if prefix_string[i] != suffix_string[i - k - d]:
+            raise ValueError("No valid string can be reconstructed.")
+    return prefix_string + suffix_string[-(k+d):]
+
+if __name__ == "__main__":
+    main()
